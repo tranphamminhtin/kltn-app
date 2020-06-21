@@ -4,9 +4,12 @@ import Swipeout from 'react-native-swipeout';
 import SwipeoutSetting from './SwipeoutDelete';
 import { RectButton } from 'react-native-gesture-handler';
 import RNPickerSelect from 'react-native-picker-select';
+import { Input } from 'galio-framework';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
 import Modal from 'react-native-modal';
 import TV from '../assets/tv.jpg';
+import moment from 'moment';
 
 export default class FacilitiesListItem extends Component {
     constructor(props) {
@@ -14,6 +17,9 @@ export default class FacilitiesListItem extends Component {
         this.state = {
             activeId: null,
             isModalVisible: false,
+            toDate: null,
+            datePicker: new Date(),
+            isDatePickerVisible: false,
             managers: [
                 { id: 1, email: 'asd1@gmail', name: 'name 1' },
                 { id: 2, email: 'asd2@gmail', name: 'name 2' },
@@ -48,12 +54,12 @@ export default class FacilitiesListItem extends Component {
 
     onSaveRequest = () => {
         console.log(1)
-        this.setState({isModalVisible: false});
+        this.setState({ isModalVisible: false });
     }
 
     render() {
         const { facilities, onPress } = this.props;
-        const { isModalVisible, rooms, units, managers } = this.state;
+        const { isModalVisible, rooms, units, managers, toDate, datePicker, isDatePickerVisible } = this.state;
         return (
             <View>
                 <Swipeout {...SwipeoutSetting(facilities.id, facilities.name, this.OpenSwipe, this.Delete)}>
@@ -75,10 +81,10 @@ export default class FacilitiesListItem extends Component {
                     </TouchableOpacity>
                 </Swipeout>
                 <Modal isVisible={isModalVisible}>
-                    <View style={styles.modal}>
+                    <View style={modalStyles.container}>
                         <FontAwesomeIcon name='remove' size={35} color='red'
                             style={{ marginVertical: 5, marginLeft: 'auto' }}
-                            onPress={() => this.setState({ isModalVisible: false })}
+                            onPress={() => this.setState({ isModalVisible: false, isDatePickerVisible: false })}
                         />
                         <View style={{ backgroundColor: 'gray', height: 1, marginBottom: 3 }} />
                         <Text style={{ fontSize: 17 }}>Manager</Text>
@@ -120,6 +126,17 @@ export default class FacilitiesListItem extends Component {
                             style={pickerSelectStyles}
                             Icon={() => <FontAwesomeIcon name='chevron-down' size={30} color={'#a1a1a1'} />}
                         />
+                        <Text style={{ fontSize: 17 }}>To date:</Text>
+                        <RectButton
+                            style={modalStyles.inputToDate}
+                            onPress={() => this.setState({ isDatePickerVisible: true })}>
+                            <View style={{ flexDirection: 'row' }}>
+                                <Text>{toDate === null ? 'Select a date' : moment(toDate).format('DD/MM/YYYY')}</Text>
+                                <View style={{ marginLeft: 'auto' }}>
+                                    <FontAwesomeIcon name="calendar" size={20} />
+                                </View>
+                            </View>
+                        </RectButton>
                         <View style={{ backgroundColor: 'gray', height: 1, marginVertical: 10 }} />
                         <TouchableOpacity onPress={this.onSaveRequest}
                             style={{
@@ -136,6 +153,25 @@ export default class FacilitiesListItem extends Component {
                             <Text style={{ fontSize: 25 }}> Save</Text>
                         </TouchableOpacity>
                     </View>
+                    {isDatePickerVisible &&
+                        <View style={pickerDateStyles.container}>
+                            <Text
+                                onPress={() => { this.setState({ isDatePickerVisible: false, toDate: this.state.datePicker }) }}
+                                style={pickerDateStyles.confirm}>
+                                Comfirm
+                            </Text>
+                            <DateTimePicker
+                                testID="dateTimePicker"
+                                value={datePicker}
+                                mode={'date'}
+                                display="default"
+                                onChange={(event, selectedDate) => {
+                                    this.setState({ datePicker: selectedDate, toDate: selectedDate });
+                                }}
+                                style={{ height: 150 }}
+                            />
+                        </View>
+                    }
                 </Modal>
             </View>
         );
@@ -174,11 +210,40 @@ const styles = StyleSheet.create({
         backgroundColor: '#3fccc5',
         padding: 5,
         borderRadius: 10
-    },
-    modal: {
+    }
+});
+const modalStyles = StyleSheet.create({
+    container: {
         backgroundColor: 'white',
         paddingHorizontal: 15,
         borderRadius: 20,
+        zIndex: 1,
+    },
+    inputToDate: {
+        backgroundColor: 'white',
+        borderColor: 'black',
+        borderRadius: 5,
+        height: 45,
+        justifyContent: 'center',
+        borderWidth: 2,
+        padding: 8,
+        marginTop: 4
+    }
+});
+const pickerDateStyles = StyleSheet.create({
+    container: {
+        backgroundColor: 'white',
+        bottom: 0,
+        borderRadius: 10,
+        marginTop: 4
+    },
+    confirm: {
+        alignSelf: 'flex-end',
+        fontSize: 15,
+        marginRight: 10,
+        color: 'blue',
+        marginTop: 10,
+        fontSize: 15
     }
 });
 const pickerSelectStyles = StyleSheet.create({
