@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 
 import OptionButton from '../components/OptionButton';
-
+import { searchLoan } from './../networking/LoanAPI';
 
 export default function Camera({ navigation }) {
   const [hasPermission, setHasPermission] = useState(null);
@@ -18,9 +18,21 @@ export default function Camera({ navigation }) {
 
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
-    navigation.navigate('DetailLoan', {
-      id: data,
-    });
+    // console.log(data);
+    // navigation.navigate('DetailLoan', {
+    //   id: data,
+    // });
+    searchLoan(data)
+      .then(res => {
+        navigation.navigate('DetailLoan', {
+          id: data,
+        });
+        setScanned(false);
+      })
+      .catch(err => {
+        console.log(err);
+        alert('Không tìm thấy thiết bị');
+      });
   };
 
   if (hasPermission === null) {

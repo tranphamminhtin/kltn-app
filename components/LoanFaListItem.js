@@ -1,57 +1,166 @@
 import React, { Component } from 'react';
 import { Image, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import Swipeout from 'react-native-swipeout';
-import SwipeoutSetting from './SwipeoutDelete';
-import { RectButton } from 'react-native-gesture-handler';
 import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
+import Modal from 'react-native-modal';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { RectButton } from 'react-native-gesture-handler';
+import domain from '../networking/domain';
 
-import TV from '../assets/tv.jpg';
+import moment from 'moment';
+
+import { updateLoan } from './../networking/LoanAPI';
+import { searchFacilities } from './../networking/FacilitiesAPI';
+import { searchRoom } from './../networking/RoomAPI';
+import { searchUser } from './../networking/UserAPI';
+import { searchUnit } from './../networking/UnitAPI';
+
+const STATESHOW = {
+    Request: 'Request',
+    Allocate: 'Allocate',
+    Revoke: 'Revoke',
+};
 
 export default class LoanFaListItem extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            activeId: null
+            right: 0,
+            loan: null,
+            facilities: null,
+            room: null,
+            manager: null,
+            unit: null,
+            isModalVisible: false,
+            isDatePickerVisible: false,
+            toDate: null,
+            datePicker: new Date()
         };
     }
 
-    OpenSwipe = () => {
-        this.setState({ activeId: this.props.facilities.id });
+    componentDidMount() {
+        const { loan } = this.props;
+        this.setState({ loan }, () => {
+            this.getFacilitiesFromServer();
+            this.getRoomFromServer();
+            this.getManagerFromServer();
+            this.getUnitFromServer();
+        });
     }
 
-    Delete = () => {
-        console.log(this.state.activeId);
+    getFacilitiesFromServer = () => {
+        const id = this.state.loan?.facilities;
+        if (id) {
+            searchFacilities(id)
+                .then(facilities => this.setState({ facilities }))
+                .catch(err => {
+                    console.log(err, 'getFa LoanFaListItem');
+                    this.setState({ facilities: null });
+                });
+        }
+    }
+
+    getRoomFromServer = () => {
+        const id = this.state.loan?.room;
+        if (id) {
+            searchRoom(id)
+                .then(room => this.setState({ room }))
+                .catch(err => {
+                    console.log(err, 'getRoom LoanFaListItem');
+                    this.setState({ room: null });
+                });
+        }
+    }
+
+    getUnitFromServer = () => {
+        const id = this.state.loan?.unit;
+        if (id) {
+            searchUnit(id)
+                .then(unit => this.setState({ unit }))
+                .catch(err => {
+                    console.log(err, 'getUnit LoanFaListItem');
+                    this.setState({ unit: null });
+                });
+        }
+    }
+
+    getManagerFromServer = () => {
+        const email = this.state.loan?.manager;
+        if (email) {
+            searchUser(email)
+                .then(manager => this.setState({ manager }))
+                .catch(err => {
+                    console.log(err, 'getmanager LoanFaListItem');
+                    this.setState({ manager: null });
+                });
+        }
+    }
+
+    getImage = () => {
+        const { facilities } = this.state;
+        const srcImage = facilities?.image.replace("http://localhost:3000", domain);
+        return srcImage;
     }
 
     onAllocate = () => {
-
+        let { loan } = this.state;
+        loan.state = 0;
+        loan.request = false;
+        this.setState({ loan: loan }, () => {
+            this.updateLoanFacilities();
+        });
     }
 
     onRevoke = () => {
-
+        let { loan } = this.state;
+        loan.state = 1;
+        loan.request = false;
+        this.setState({ loan: loan }, () => {
+            this.updateLoanFacilities();
+        });
     }
 
     onRequest = () => {
+        let { loan } = this.state;
+        loan.to = this.state.toDate;
+        loan.state = 0;
+        loan.request = this.state.right === 1;
+        this.setState({ loan: loan }, () => {
+            this.updateLoanFacilities();
+        });
+    }
 
+    updateLoanFacilities = () => {
+        const { loan } = this.state;
+        const id = loan._id;
+        updateLoan(id, loan)
+            .then(flag => {
+                alert('Thành công');
+
+            })
+            .catch(err => {
+                console.log(err);
+                alert('Thất bại');
+            });
     }
 
     render() {
-        const { facilities, onPress, stateShow } = this.props;
+        const { onPress, stateShow } = this.props;
+        const { facilities, room, manager, unit, isModalVisible, isDatePickerVisible, toDate, datePicker } = this.state;
         return (
-            <Swipeout {...SwipeoutSetting(facilities.id, facilities.name, this.OpenSwipe, this.Delete)}>
+            <View>
                 <TouchableOpacity activeOpacity={0.5} onPress={onPress}>
                     <View style={styles.container}>
-                        <Image style={styles.FacilitiesImage} source={TV} />
+                        <Image style={styles.FacilitiesImage} source={{ uri: this.getImage() }} />
                         <View style={styles.description}>
-                            <Text style={styles.title}>Name</Text>
+                            <Text style={styles.title}>{facilities?.name}</Text>
                             <View style={{ flexDirection: 'row' }}>
                                 <View>
-                                    <Text style={{ fontSize: 15 }}>Unit</Text>
-                                    <Text style={styles.manager}>Manager</Text>
+                                    <Text style={{ fontSize: 15 }}>{unit?.name}</Text>
+                                    <Text style={styles.manager}>{manager?.name}</Text>
                                 </View>
                                 <View style={{ marginLeft: 'auto' }}>
-                                    <Text style={{ fontSize: 15 }} >Room</Text>
-                                    {stateShow == 'Request' &&
+                                    <Text style={{ fontSize: 15 }} >{room?.name}</Text>
+                                    {stateShow == STATESHOW.Request &&
                                         <FontAwesomeIcon
                                             name="check-square-o"
                                             size={35}
@@ -60,7 +169,7 @@ export default class LoanFaListItem extends Component {
                                             onPress={this.onAllocate}
                                         />
                                     }
-                                    {stateShow == 'Allocate' &&
+                                    {stateShow == STATESHOW.Allocate &&
                                         <FontAwesomeIcon
                                             name="external-link"
                                             size={35}
@@ -69,13 +178,13 @@ export default class LoanFaListItem extends Component {
                                             onPress={this.onRevoke}
                                         />
                                     }
-                                    {stateShow == 'Revoke' &&
+                                    {stateShow == STATESHOW.Revoke &&
                                         <FontAwesomeIcon
                                             name="save"
                                             size={35}
                                             color={'blue'}
                                             style={styles.button}
-                                            onPress={this.onRequest}
+                                            onPress={() => this.setState({ isModalVisible: true })}
                                         />
                                     }
                                 </View>
@@ -83,7 +192,53 @@ export default class LoanFaListItem extends Component {
                         </View>
                     </View>
                 </TouchableOpacity>
-            </Swipeout>
+                <Modal isVisible={isModalVisible}>
+                    <View style={modalStyles.container}>
+                        <FontAwesomeIcon name='remove' size={35} color='red'
+                            style={{ marginVertical: 5, marginLeft: 'auto' }}
+                            onPress={() => this.setState({ isModalVisible: false, isDatePickerVisible: false })}
+                        />
+                        <View style={{ backgroundColor: 'gray', height: 1, marginBottom: 3 }} />
+                        <Text style={{ fontSize: 17 }}>To date:</Text>
+                        <RectButton
+                            style={modalStyles.inputToDate}
+                            onPress={() => this.setState({ isDatePickerVisible: true })}>
+                            <View style={{ flexDirection: 'row' }}>
+                                <Text>{toDate === null ? 'Select a date' : moment(toDate).format('DD/MM/YYYY')}</Text>
+                                <View style={{ marginLeft: 'auto' }}>
+                                    <FontAwesomeIcon name="calendar" size={20} />
+                                </View>
+                            </View>
+                        </RectButton>
+                        <View style={{ backgroundColor: 'gray', height: 1, marginVertical: 10 }} />
+                        <TouchableOpacity onPress={this.onRequest}
+                            style={modalStyles.buttonSave}
+                        >
+                            <FontAwesomeIcon name='save' size={35} />
+                            <Text style={{ fontSize: 25 }}> Save</Text>
+                        </TouchableOpacity>
+                    </View>
+                    {isDatePickerVisible &&
+                        <View style={pickerDateStyles.container}>
+                            <Text
+                                onPress={() => { this.setState({ isDatePickerVisible: false, toDate: this.state.datePicker }) }}
+                                style={pickerDateStyles.confirm}>
+                                Comfirm
+                            </Text>
+                            <DateTimePicker
+                                testID="dateTimePicker"
+                                value={datePicker}
+                                mode={'date'}
+                                display="default"
+                                onChange={(event, selectedDate) => {
+                                    this.setState({ datePicker: selectedDate, toDate: selectedDate });
+                                }}
+                                style={{ height: 150 }}
+                            />
+                        </View>
+                    }
+                </Modal>
+            </View>
         );
     }
 }
@@ -122,4 +277,47 @@ const styles = StyleSheet.create({
         marginRight: 10,
         marginLeft: 'auto',
     },
+});
+const modalStyles = StyleSheet.create({
+    container: {
+        backgroundColor: 'white',
+        paddingHorizontal: 15,
+        borderRadius: 20,
+        zIndex: 1,
+    },
+    inputToDate: {
+        backgroundColor: 'white',
+        borderColor: 'black',
+        borderRadius: 5,
+        height: 45,
+        justifyContent: 'center',
+        borderWidth: 2,
+        padding: 8,
+        marginTop: 4
+    },
+    buttonSave: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginHorizontal: 95,
+        paddingVertical: 3,
+        borderRadius: 15,
+        marginBottom: 10,
+        backgroundColor: 'mediumseagreen',
+    }
+});
+const pickerDateStyles = StyleSheet.create({
+    container: {
+        backgroundColor: 'white',
+        bottom: 0,
+        borderRadius: 10,
+        marginTop: 4
+    },
+    confirm: {
+        alignSelf: 'flex-end',
+        fontSize: 15,
+        marginRight: 10,
+        color: 'blue',
+        marginTop: 10,
+        fontSize: 15
+    }
 });

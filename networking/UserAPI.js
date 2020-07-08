@@ -1,49 +1,27 @@
-import React, { Component } from 'react';
-import { AppRegist, SectionList, StyleSheet, Text, View, Alert, Platform } from 'react-native';
-
-const api = 'http://localhost:3000/user';
+import domain from './domain'
+const api = domain + '/user';
 
 async function getListUser() {
     try {
         let response = await fetch(api);
         let responseJson = await response.json();
-        if (!responseJson.success) {
-            throw new Error(responseJson.message)
+        if(!responseJson.success){
+            throw new Error(responseJson.message);
         }
         return responseJson.message;
     } catch (error) {
-        console.log(`Error is: ${error}`);
+        console.log(error);
     }
 }
 
 async function searchUser(email) {
     try {
-        let response = await fetch(`${api}/${email}`);
+        let response = await fetch(`${api}/users/${email}`);
         let responseJson = await response.json();
         if (!responseJson.success) {
             throw new Error(responseJson.message)
         }
         return responseJson.message;
-    } catch (error) {
-        console.log(`Error is: ${error}`);
-    }
-}
-
-async function createUser(value) {
-    try {
-        let response = await fetch(api, {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(value)
-        });
-        let responseJson = await response.json();
-        if (!responseJson.success) {
-            throw new Error(responseJson.message)
-        }
-        return responseJson.success;
     } catch (error) {
         console.log(`Error is: ${error}`);
     }
@@ -51,32 +29,13 @@ async function createUser(value) {
 
 async function updateUser(value) {
     try {
-        let response = await fetch(`${api}/${value.email}`, {
+        let response = await fetch(`${api}/users/${value.email}`, {
             method: 'PUT',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(value)
-        });
-        let responseJson = await response.json();
-        if (!responseJson.success) {
-            throw new Error(responseJson.message)
-        }
-        return responseJson.success;
-    } catch (error) {
-        console.log(`Error is: ${error}`);
-    }
-}
-
-async function deleteUser(email) {
-    try {
-        let response = await fetch(`${api}/${email}`, {
-            method: 'DELETE',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
         });
         let responseJson = await response.json();
         if (!responseJson.success) {
@@ -150,9 +109,7 @@ async function loginWithGG(value) {
 
 export { getListUser };
 export { searchUser };
-export { createUser };
 export { updateUser };
-export { deleteUser };
 export { changePassword };
 export { login };
 export { loginWithGG };

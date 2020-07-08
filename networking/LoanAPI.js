@@ -1,14 +1,12 @@
-import React, { Component } from 'react';
-import { AppRegist, SectionList, StyleSheet, Text, View, Alert, Platform } from 'react-native';
-
-const api = 'http://localhost:3000/loan-facilities';
+import domain from './domain'
+const api = domain + '/loan-facilities';
 
 async function getListLoan() {
     try {
         let response = await fetch(api);
         let responseJson = await response.json();
         if (!responseJson.success) {
-            throw new Error(responseJson.message)
+            throw new Error(responseJson.message);
         }
         return responseJson.message;
     } catch (error) {
@@ -21,7 +19,7 @@ async function searchLoan(id) {
         let response = await fetch(`${api}/${id}`);
         let responseJson = await response.json();
         if (!responseJson.success) {
-            throw new Error(responseJson.message)
+            throw new Error(responseJson.message);
         }
         return responseJson.message;
     } catch (error) {
@@ -41,7 +39,7 @@ async function createLoan(value) {
         });
         let responseJson = await response.json();
         if (!responseJson.success) {
-            throw new Error(responseJson.message)
+            throw new Error(responseJson.message);
         }
         return responseJson.success;
     } catch (error) {
@@ -61,7 +59,7 @@ async function updateLoan(id, value) {
         });
         let responseJson = await response.json();
         if (!responseJson.success) {
-            throw new Error(responseJson.message)
+            throw new Error(responseJson.message);
         }
         return responseJson.success;
     } catch (error) {
@@ -69,27 +67,49 @@ async function updateLoan(id, value) {
     }
 }
 
-async function deleteLoan(id) {
+async function searchLoanByRoom(idRoom, idFacilities) {
     try {
-        let response = await fetch(`${api}/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-        });
+        let response = await fetch(`${api}/search?facilities=${idFacilities}&room=${idRoom}`);
         let responseJson = await response.json();
         if (!responseJson.success) {
-            throw new Error(responseJson.message)
+            throw new Error(responseJson.message);
         }
-        return responseJson.success;
+        return responseJson.message;
     } catch (error) {
-        console.log(`Error is: ${error}`);
+        console.log(error);
     }
 }
 
-export { getListLoan};
-export { searchLoan};
-export { createLoan};
-export { updateLoan};
-export { deleteLoan};
+async function searchLoanByManager(email, idFacilities) {
+    try {
+        let response = await fetch(`${api}/search?facilities=${idFacilities}&manager=${email}`);
+        let responseJson = await response.json();
+        if (!responseJson.success) {
+            throw new Error(responseJson.message);
+        }
+        return responseJson.message;
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function searchLoanByFacilities(idFacilities) {
+    try {
+        let response = await fetch(`${api}/search?facilities=${idFacilities}`);
+        let responseJson = await response.json();
+        if (!responseJson.success) {
+            throw new Error(responseJson.message);
+        }
+        return responseJson.message;
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+export { getListLoan };
+export { searchLoan };
+export { createLoan };
+export { updateLoan };
+export { searchLoanByRoom };
+export { searchLoanByManager };
+export { searchLoanByFacilities };

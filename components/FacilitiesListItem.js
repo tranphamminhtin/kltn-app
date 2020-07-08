@@ -1,85 +1,141 @@
 import React, { Component } from 'react';
-import { Image, View, Text, StyleSheet, TouchableOpacity, Button } from 'react-native';
-import Swipeout from 'react-native-swipeout';
-import SwipeoutSetting from './SwipeoutDelete';
+import { Image, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { RectButton } from 'react-native-gesture-handler';
 import RNPickerSelect from 'react-native-picker-select';
-import { Input } from 'galio-framework';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
 import Modal from 'react-native-modal';
-import TV from '../assets/tv.jpg';
 import moment from 'moment';
+import domain from '../networking/domain';
+
+import { createLoan } from './../networking/LoanAPI';
+import { searchType } from './../networking/TypeAPI';
+import { getListUser } from './../networking/UserAPI';
+import { getListRoom } from './../networking/RoomAPI';
 
 export default class FacilitiesListItem extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            activeId: null,
+            right: 0,
             isModalVisible: false,
             toDate: null,
             datePicker: new Date(),
             isDatePickerVisible: false,
+            type: null,
             managers: [
-                { id: 1, email: 'asd1@gmail', name: 'name 1' },
-                { id: 2, email: 'asd2@gmail', name: 'name 2' },
-                { id: 3, email: 'asd3@gmail', name: 'name 3' },
-                { id: 4, email: 'asd4@gmail', name: 'name 4' },
-                { id: 5, email: 'asd5@gmail', name: 'name 5' }
+                { _id: 1, email: 'asd1@gmail', name: 'name 1' },
+                { _id: 2, email: 'asd2@gmail', name: 'name 2' },
+                { _id: 3, email: 'asd3@gmail', name: 'name 3' },
+                { _id: 4, email: 'asd4@gmail', name: 'name 4' },
+                { _id: 5, email: 'asd5@gmail', name: 'name 5' }
             ],
             rooms: [
-                { id: 1, name: 'room 1' },
-                { id: 2, name: 'room 2' },
-                { id: 3, name: 'room 3' },
-                { id: 4, name: 'room 4' },
-                { id: 5, name: 'room 5' }
+                { _id: 1, name: 'room 1' },
+                { _id: 2, name: 'room 2' },
+                { _id: 3, name: 'room 3' },
+                { _id: 4, name: 'room 4' },
+                { _id: 5, name: 'room 5' }
             ],
-            units: [
-                { id: 1, name: 'unit 1' },
-                { id: 2, name: 'unit 2' },
-                { id: 3, name: 'unit 3' },
-                { id: 4, name: 'unit 4' },
-                { id: 5, name: 'unit 5' }
-            ]
+            manager: null,
+            room: null
         };
     }
 
-    OpenSwipe = () => {
-        this.setState({ activeId: this.props.facilities.id });
+    componentDidMount() {
+        this.getTypeFromServer();
+        this.getManagersFromServer();
+        this.getRoomsFromServer();
     }
 
-    Delete = () => {
-        console.log(this.state.activeId);
+    getTypeFromServer = () => {
+        const { facilities } = this.props;
+        if (facilities.type) {
+            searchType(facilities.type)
+                .then(type => this.setState({ type }))
+                .catch(err => {
+                    console.log(err);
+                    this.setState({ type: null });
+                });
+        }
+    }
+
+    getManagersFromServer = () => {
+        getListUser()
+            .then(users => {
+                const managers = users.filter(user => user.right === 1);
+                this.setState({ managers });
+            })
+            .catch(err => {
+                console.log(err);
+                this.setState({ managers: [] });
+            });
+    }
+
+    getRoomsFromServer = () => {
+        getListRoom()
+            .then(rooms => this.setState({ rooms }))
+            .catch(err => {
+                console.log(err);
+                this.setState({ rooms: [] });
+            });
+    }
+
+    getImage = () => {
+        const { facilities } = this.props;
+        if (facilities?.image) {
+            const srcImage = facilities?.image.replace("http://localhost:3000", domain);
+            return srcImage;
+        }
+        return null;
     }
 
     onSaveRequest = () => {
-        console.log(1)
         this.setState({ isModalVisible: false });
+        const { manager, managers } = this.state;
+        const unit = managers.find(m => m.email === manager)?.unit;
+        let loan = {
+            facilities: this.props.facilities._id,
+            room: this.state.room,
+            unit: unit,
+            manager: manager,
+            from: Date.now(),
+            to: this.state.toDate,
+            state: 0,
+            request: this.state.right === 1
+        }
+        createLoan(loan)
+            .then(flag => alert('Thành công'))
+            .catch(err => {
+                console.log(err);
+                alert('Thất bại');
+            });
     }
 
     render() {
         const { facilities, onPress } = this.props;
-        const { isModalVisible, rooms, units, managers, toDate, datePicker, isDatePickerVisible } = this.state;
+        const { isModalVisible, type, rooms, managers, toDate, datePicker, isDatePickerVisible, manager, room } = this.state;
+        const image = this.getImage();
         return (
             <View>
-                <Swipeout {...SwipeoutSetting(facilities.id, facilities.name, this.OpenSwipe, this.Delete)}>
-                    <TouchableOpacity activeOpacity={0.5} onPress={onPress}>
-                        <View style={styles.container}>
-                            <Image style={styles.FacilitiesImage} source={TV} />
-                            <View style={styles.description}>
-                                <Text style={styles.title}>{facilities.name}</Text>
-                                <Text>Type</Text>
-                                <Text style={{ color: '#a1a1a1', marginTop: 7 }}>Quantity</Text>
-                                <TouchableOpacity activeOpacity={0.5} onPress={() => this.setState({ isModalVisible: true })}>
-                                    <RectButton style={styles.buttonRequest}>
-                                        <FontAwesomeIcon name='inbox' size={25} />
-                                        <Text style={{ fontSize: 18, paddingTop: 3 }}> Cấp phát</Text>
-                                    </RectButton>
-                                </TouchableOpacity>
-                            </View>
+                <TouchableOpacity activeOpacity={0.5} onPress={onPress}>
+                    <View style={styles.container}>
+                        {image &&
+                            <Image style={styles.FacilitiesImage} source={{ uri: image }} />
+                        }
+                        <View style={styles.description}>
+                            <Text style={styles.title}>{facilities?.name}</Text>
+                            <Text>Loại: {type?.name}</Text>
+                            <Text style={{ color: '#a1a1a1', marginTop: 7 }}>Số lượng: {facilities?.quantity}</Text>
+                            <TouchableOpacity activeOpacity={0.5} onPress={() => this.setState({ isModalVisible: true })}>
+                                <RectButton style={styles.buttonRequest}>
+                                    <FontAwesomeIcon name='inbox' size={25} />
+                                    <Text style={{ fontSize: 18, paddingTop: 3 }}> Cấp phát</Text>
+                                </RectButton>
+                            </TouchableOpacity>
                         </View>
-                    </TouchableOpacity>
-                </Swipeout>
+                    </View>
+                </TouchableOpacity>
                 <Modal isVisible={isModalVisible}>
                     <View style={modalStyles.container}>
                         <FontAwesomeIcon name='remove' size={35} color='red'
@@ -90,7 +146,8 @@ export default class FacilitiesListItem extends Component {
                         <Text style={{ fontSize: 17 }}>Manager</Text>
                         <RNPickerSelect
                             placeholder={{ label: 'Select a room' }}
-                            onValueChange={(value) => console.log(value)}
+                            value={manager}
+                            onValueChange={(value) => this.setState({ manager: value })}
                             items={managers.map(manager => {
                                 var obj = {};
                                 obj.label = manager.name;
@@ -103,24 +160,12 @@ export default class FacilitiesListItem extends Component {
                         <Text style={{ fontSize: 17 }}>Room</Text>
                         <RNPickerSelect
                             placeholder={{ label: 'Select a room' }}
-                            onValueChange={(value) => console.log(value)}
+                            value={room}
+                            onValueChange={(value) => this.setState({ room: value })}
                             items={rooms.map(room => {
                                 var obj = {};
                                 obj.label = room.name;
-                                obj.value = room.id;
-                                return obj;
-                            })}
-                            style={pickerSelectStyles}
-                            Icon={() => <FontAwesomeIcon name='chevron-down' size={30} color={'#a1a1a1'} />}
-                        />
-                        <Text style={{ fontSize: 17 }}>Unit</Text>
-                        <RNPickerSelect
-                            placeholder={{ label: 'Select a unit' }}
-                            onValueChange={(value) => console.log(value)}
-                            items={units.map(unit => {
-                                var obj = {};
-                                obj.label = unit.name;
-                                obj.value = unit.id;
+                                obj.value = room._id;
                                 return obj;
                             })}
                             style={pickerSelectStyles}
@@ -256,7 +301,7 @@ const pickerSelectStyles = StyleSheet.create({
         borderColor: 'black',
         borderRadius: 4,
         color: 'black',
-        paddingRight: 30, // to ensure the text is never behind the icon
+        paddingRight: 30,
     },
     inputAndroid: {
         marginVertical: 10,
@@ -267,7 +312,7 @@ const pickerSelectStyles = StyleSheet.create({
         borderColor: 'purple',
         borderRadius: 8,
         color: 'black',
-        paddingRight: 30, // to ensure the text is never behind the icon
+        paddingRight: 30,
     },
     iconContainer: {
         top: 15,

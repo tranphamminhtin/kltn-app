@@ -1,20 +1,5 @@
-import React, { Component } from 'react';
-import { AppRegist, SectionList, StyleSheet, Text, View, Alert, Platform } from 'react-native';
-
-const api = 'http://localhost:3000/vote';
-
-async function getListVote() {
-    try {
-        let response = await fetch(api);
-        let responseJson = await response.json();
-        if (!responseJson.success) {
-            throw new Error(responseJson.message)
-        }
-        return responseJson.message;
-    } catch (error) {
-        console.log(`Error is: ${error}`);
-    }
-}
+import domain from './domain'
+const api = domain + '/vote';
 
 async function searchVote(id) {
     try {
@@ -88,7 +73,6 @@ async function deleteVote(id) {
     }
 }
 
-export { getListVote };
 export { searchVote };
 export { createVote };
 export { updateVote };

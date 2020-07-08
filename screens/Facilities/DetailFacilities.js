@@ -1,47 +1,79 @@
 import React, { Component } from 'react';
-import { Text, Image, ScrollView, StyleSheet } from 'react-native';
-import { Input } from 'galio-framework';
-
-import OptionButton from '../../components/OptionButton';
-
-import tv from '../../assets/tv.jpg';
+import { Text, Image, ScrollView, StyleSheet, View } from 'react-native';
+import moment from 'moment';
+import { searchFacilities } from './../../networking/FacilitiesAPI';
+import { searchType } from './../../networking/TypeAPI';
+import domain from '../../networking/domain';
 
 export default class DetailFacilities extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            _id: '',
+            detail: null,
+            nameType: '',
         };
     }
 
-    onUpdate = () => {
+    componentDidMount() {
+        const { _id } = this.props.route.params;
+        this.setState({ _id: _id }, () => {
+            this.onGetDetaiFacilitiesFromServer();
+        });
+    }
 
+    onGetDetaiFacilitiesFromServer = () => {
+        const { _id } = this.state;
+        searchFacilities(_id)
+            .then(detail => {
+                this.setState({ detail: detail }, () => {
+                    this.onGetNameType(detail.type);
+                });
+            })
+            .catch(err => {
+                console.log(err);
+                this.setState({
+                    detail: null
+                });
+            })
+    }
+
+    onGetNameType = (id) => {
+        searchType(id)
+            .then(type => {
+                this.setState({ nameType: type.name });
+            })
+            .catch(err => {
+                console.log(err);
+                this.setState({ nameType: '' });
+            });
+    }
+
+    getImage = () => {
+        const { detail } = this.state;
+        if (detail?.image) {
+            const srcImage = detail?.image.replace("http://localhost:3000", domain);
+            return srcImage;
+        }
+        return null;
     }
 
     render() {
-        const { facilities } = this.props.route.params;
+        const { detail, nameType } = this.state;
+        const image = this.getImage();
         return (
             <ScrollView style={styles.container}>
-                <Image source={tv} style={styles.imageFacilite} />
-                <Text> {facilities.id} </Text>
-                <Text style={styles.name}>
-                    Local files and sets can be imported by dragging and dropping them into
-                    the editor
-                </Text>
-                <Text style={styles.date}>06/06/2020</Text>
-                <Text style={styles.description}>Type is here</Text>
-                <Text style={styles.description}>Supplier is here</Text>
-                <Text style={styles.description}>Note</Text>
-                <Input placeholder="Note" style={styles.inputNote} />
-                <Text style={styles.description}>Quantity</Text>
-                <Input placeholder="Quantity" rounded type={'numeric'} />
-                <OptionButton
-                    icon="wrench"
-                    label="Update"
-                    backgroundColor='#0069d9'
-                    colorLabel='white'
-                    style={styles.buttonUpdate}
-                    onPress={this.onUpdate}
-                />
+                {image &&
+                    <Image source={{ uri: image }} style={styles.imageFacilite} />
+                }
+                <Text style={styles.name}>{detail?.name}</Text>
+                <Text style={styles.date}>{moment(detail?.date).format('DD/MM/YYYY')}</Text>
+                <Text style={styles.description}>Loại: {nameType}</Text>
+                <Text style={styles.description}>Nhà cung cấp: {detail?.supplier}</Text>
+                {detail?.note &&
+                    <Text style={styles.description}>Ghi chú: {detail?.note}</Text>
+                }
+                <Text style={styles.description}>Số lượng: {detail?.quantity}</Text>
             </ScrollView>
         );
     }
@@ -55,34 +87,25 @@ const styles = StyleSheet.create({
     name: {
         margin: 24,
         marginTop: 10,
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
         textAlign: 'center',
     },
     imageFacilite: {
+        marginBottom: 10,
         alignSelf: 'center',
         height: 200,
         resizeMode: 'stretch',
         width: '85%'
     },
     date: {
-        fontSize: 15,
+        fontSize: 17,
         color: '#a1a1a1',
         marginLeft: 'auto',
+        marginBottom: 10
     },
     description: {
-        marginBottom: 10,
-        fontSize: 18,
-    },
-    inputNote: {
-        height: 100,
-        alignItems: 'flex-start',
-        paddingTop: 10,
-    },
-    buttonUpdate: {
-        borderRadius: 30,
-        marginVertical: 20,
-        width: '50%',
-        alignSelf: 'center',
+        marginBottom: 18,
+        fontSize: 20,
     }
 })

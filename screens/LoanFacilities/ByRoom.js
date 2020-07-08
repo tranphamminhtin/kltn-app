@@ -1,66 +1,129 @@
 import React, { Component } from 'react';
-import { View, FlatList, StyleSheet, Text } from 'react-native';
+import { View, FlatList, StyleSheet, Text, RefreshControl } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
-import LoanFaListItem from '../../components/LoanFaListItem';
+import FacilitiesListItem from '../../components/FacilitiesListItemDistinct';
+
+import { getFacilitiesByRoom } from './../../networking/FacilitiesAPI';
+import { getListRoom } from './../../networking/RoomAPI';
+
+const STATESHOW = {
+  Request: 'Request',
+  Allocate: 'Allocate',
+  Revoke: 'Revoke'
+};
 
 class ByRoom extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      loanfacilities: [
-        { id: 1, name: 'Bàn 1' },
-        { id: 2, name: 'Bàn 2' },
-        { id: 3, name: 'Bàn 3' },
-        { id: 4, name: 'Bàn 4' },
-        { id: 5, name: 'Bàn 5' },
-        { id: 6, name: 'Bàn 6' },
-        { id: 7, name: 'Bàn 7' },
-        { id: 8, name: 'Bàn 8' }
-      ],
       rooms: [
-        { id: 1, name: 'room 1' },
-        { id: 2, name: 'room 2' },
-        { id: 3, name: 'room 3' },
-        { id: 4, name: 'room 4' },
-        { id: 5, name: 'room 5' }
+        { _id: 1, name: 'room 1' },
+        { _id: 2, name: 'room 2' },
+        { _id: 3, name: 'room 3' },
+        { _id: 4, name: 'room 4' },
+        { _id: 5, name: 'room 5' }
       ],
-      stateShow: this.props.route.params.stateShow
+      room: null,
+      facilities: [],
+      refreshing: false,
+      stateShow: ''
     };
+  }
+
+  componentDidMount() {
+    const { stateShow } = this.props.route.params;
+    this.setState({ stateShow: stateShow }, () => {
+      this.refreshFacilitiesFromServer();
+      this.refreshRoomsFromServer();
+    });
+  }
+
+  refreshFacilitiesFromServer = () => {
+    const { room, stateShow } = this.state;
+    this.setState({ refreshing: true });
+    let idroom = 'null';
+    if (room) {
+      idroom = room;
+    }
+    getFacilitiesByRoom(idroom, stateShow)
+      .then(facilities => {
+        this.setState({
+          facilities: facilities,
+          refreshing: false
+        });
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({
+          facilities: [],
+          refreshing: false
+        });
+      });
+  }
+
+  refreshRoomsFromServer = () => {
+    this.setState({ refreshing: true });
+    getListRoom()
+      .then(rooms => {
+        this.setState({
+          rooms: rooms,
+          refreshing: false
+        });
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({ rooms: [], refreshing: false });
+      });
+  }
+
+  onRefresh = () => {
+    this.refreshFacilitiesFromServer();
+  }
+
+  onFilter = (value) => {
+    if (value) {
+      this.setState({ room: value }, this.refreshFacilitiesFromServer);
+    } else {
+      this.setState({ room: 'null' }, this.refreshFacilitiesFromServer);
+    }
   }
 
   render() {
     const { navigation } = this.props;
-    const { stateShow, loanfacilities, rooms } = this.state
+    const { stateShow, rooms, refreshing, room, facilities } = this.state;
     return (
       <View>
         <Text style={{ marginLeft: 7, marginTop: 4, fontSize: 18 }}>Room: </Text>
-        <RNPickerSelect
-          placeholder={{ label: 'Select a room' }}
-          onValueChange={(value) => console.log(value)}
-          items={rooms.map(room => {
-            var obj = {};
-            obj.label = room.name;
-            obj.value = room.id;
-            return obj;
-          })}
-          style={pickerSelectStyles}
-          Icon={() => <FontAwesomeIcon name='chevron-down' size={30} color={'#a1a1a1'} />}
-        />
-        <FlatList data={loanfacilities}
+        {rooms.length > 0 &&
+          <RNPickerSelect
+            placeholder={{ label: 'Select a room' }}
+            value={room}
+            onValueChange={(value) => this.onFilter(value)}
+            items={rooms.map(room => {
+              var obj = {};
+              obj.label = room.name;
+              obj.value = room._id;
+              return obj;
+            })}
+            style={pickerSelectStyles}
+            Icon={() => <FontAwesomeIcon name='chevron-down' size={30} color={'#a1a1a1'} />}
+          />
+        }
+        <FlatList data={facilities}
           renderItem={({ item }) =>
             <View>
-              <LoanFaListItem
+              <FacilitiesListItem
                 facilities={item}
-                onPress={() => navigation.navigate('DetailLoan', {
-                  facilities: item
-                })}
-                stateShow={stateShow}
-              />
-            </View>
+                onPress={() => navigation.navigate('ListLoanFa', {
+                  _id: item._id,
+                  stateShow: stateShow
+                })} />
+            </View >
           }
-          keyExtractor={(item) => `${item.id}`}
-          contentContainerStyle={{ paddingTop: 4, paddingBottom: 90 }}
+          keyExtractor={(item) => `${item._id}`}
+          contentContainerStyle={styles.container}
+          refreshControl={< RefreshControl refreshing={refreshing} onRefresh={this.onRefresh} />}
         />
       </View>
     );
@@ -68,6 +131,12 @@ class ByRoom extends Component {
 }
 
 export default ByRoom;
+const styles = StyleSheet.create({
+  container: {
+    paddingTop: 4,
+    paddingBottom: 100
+  }
+});
 const pickerSelectStyles = StyleSheet.create({
   inputIOS: {
     marginHorizontal: 7,
@@ -80,7 +149,7 @@ const pickerSelectStyles = StyleSheet.create({
     borderColor: 'black',
     borderRadius: 4,
     color: 'black',
-    paddingRight: 30, // to ensure the text is never behind the icon
+    paddingRight: 30,
   },
   inputAndroid: {
     marginHorizontal: 7,
@@ -93,7 +162,7 @@ const pickerSelectStyles = StyleSheet.create({
     borderColor: 'purple',
     borderRadius: 8,
     color: 'black',
-    paddingRight: 30, // to ensure the text is never behind the icon
+    paddingRight: 30,
   },
   iconContainer: {
     top: 15,

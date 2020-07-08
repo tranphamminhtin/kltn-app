@@ -1,66 +1,121 @@
 import React, { Component } from 'react';
-import { View, FlatList, StyleSheet, Text } from 'react-native';
+import { View, FlatList, StyleSheet, Text, RefreshControl } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
-import LoanFaListItem from '../../components/LoanFaListItem';
+import FacilitiesListItem from '../../components/FacilitiesListItemDistinct';
+
+import { getListUser } from './../../networking/UserAPI';
+import { getFacilitiesByManager } from './../../networking/FacilitiesAPI';
+
+const STATESHOW = {
+  Request: 'Request',
+  Allocate: 'Allocate',
+  Revoke: 'Revoke'
+};
 
 class ByManager extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      loanfacilities: [
-        { id: 1, name: 'Bàn 1' },
-        { id: 2, name: 'Bàn 2' },
-        { id: 3, name: 'Bàn 3' },
-        { id: 4, name: 'Bàn 4' },
-        { id: 5, name: 'Bàn 5' },
-        { id: 6, name: 'Bàn 6' },
-        { id: 7, name: 'Bàn 7' },
-        { id: 8, name: 'Bàn 8' }
-      ],
-      managers: [
-        { id: 1, email: 'asd1@gmail', name: 'name 1' },
-        { id: 2, email: 'asd2@gmail', name: 'name 2' },
-        { id: 3, email: 'asd3@gmail', name: 'name 3' },
-        { id: 4, email: 'asd4@gmail', name: 'name 4' },
-        { id: 5, email: 'asd5@gmail', name: 'name 5' }
-      ],
-      stateShow: this.props.route.params.stateShow
+      managers: [],
+      manager: null,
+      facilities: [],
+      refreshing: false,
+      stateShow: ''
     };
+  }
+
+  componentDidMount() {
+    const { stateShow } = this.props.route.params;
+    this.setState({ stateShow: stateShow }, () => {
+      this.refreshFacilitiesFromServer();
+      this.refreshManagersFromServer();
+    });
+  }
+
+  refreshFacilitiesFromServer = () => {
+    const { manager, stateShow } = this.state;
+    this.setState({ refreshing: true });
+    let email = 'null';
+    if (manager) {
+      email = manager;
+    }
+    getFacilitiesByManager(email, stateShow)
+      .then(facilities => {
+        this.setState({
+          facilities: facilities,
+          refreshing: false
+        });
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({
+          facilities: [],
+          refreshing: false
+        });
+      });
+  }
+
+  refreshManagersFromServer = () => {
+    this.setState({ refreshing: true });
+    getListUser()
+      .then(users => {
+        const managers = users.filter(user => user.right === 1);
+        this.setState({ managers: managers, refreshing: false });
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({ managers: [], refreshing: false });
+      });
+  }
+
+  onRefresh = () => {
+    this.refreshFacilitiesFromServer();
+  }
+
+  onFilter = (value) => {
+    if (value) {
+      this.setState({ manager: value }, this.refreshFacilitiesFromServer);
+    } else {
+      this.setState({ manager: 'null' }, this.refreshFacilitiesFromServer);
+    }
   }
 
   render() {
     const { navigation } = this.props;
-    const { stateShow, loanfacilities, managers } = this.state
+    const { stateShow, managers, refreshing, manager, facilities } = this.state
     return (
       <View>
         <Text style={{ marginLeft: 7, marginTop: 4, fontSize: 18 }}>Manager: </Text>
-        <RNPickerSelect
-          placeholder={{ label: 'Select a manager' }}
-          onValueChange={(value) => console.log(value)}
-          items={managers.map(manager => {
-            var obj = {};
-            obj.label = manager.name;
-            obj.value = manager.email;
-            return obj;
-          })}
-          style={pickerSelectStyles}
-          Icon={() => <FontAwesomeIcon name='chevron-down' size={30} color={'#a1a1a1'} />}
-        />
-        <FlatList data={loanfacilities}
+        {managers?.length > 0 &&
+          <RNPickerSelect
+            placeholder={{ label: 'Select a manager' }}
+            value={manager}
+            onValueChange={(value) => this.onFilter(value)}
+            items={managers.map(manager => {
+              var obj = {};
+              obj.label = manager.name;
+              obj.value = manager.email;
+              return obj;
+            })}
+            style={pickerSelectStyles}
+            Icon={() => <FontAwesomeIcon name='chevron-down' size={30} color={'#a1a1a1'} />}
+          />
+        }
+        <FlatList data={facilities}
           renderItem={({ item }) =>
             <View>
-              <LoanFaListItem
+              <FacilitiesListItem
                 facilities={item}
-                onPress={() => navigation.navigate('DetailLoan', {
-                  facilities: item
-                })}
-                stateShow={stateShow}
-              />
-            </View>
+                onPress={() => navigation.navigate('ListLoanFa', {
+                  _id: item._id,
+                  stateShow: stateShow
+                })} />
+            </View >
           }
-          keyExtractor={(item) => `${item.id}`}
-          contentContainerStyle={{ paddingTop: 4, paddingBottom: 90 }}
+          keyExtractor={(item) => `${item._id}`}
+          contentContainerStyle={styles.container}
+          refreshControl={< RefreshControl refreshing={refreshing} onRefresh={this.onRefresh} />}
         />
       </View>
     );
@@ -68,6 +123,12 @@ class ByManager extends Component {
 }
 
 export default ByManager;
+const styles = StyleSheet.create({
+  container: {
+    paddingTop: 4,
+    paddingBottom: 100
+  }
+});
 const pickerSelectStyles = StyleSheet.create({
   inputIOS: {
     marginHorizontal: 7,
@@ -80,7 +141,7 @@ const pickerSelectStyles = StyleSheet.create({
     borderColor: 'black',
     borderRadius: 4,
     color: 'black',
-    paddingRight: 30, // to ensure the text is never behind the icon
+    paddingRight: 30,
   },
   inputAndroid: {
     marginHorizontal: 7,
@@ -93,7 +154,7 @@ const pickerSelectStyles = StyleSheet.create({
     borderColor: 'purple',
     borderRadius: 8,
     color: 'black',
-    paddingRight: 30, // to ensure the text is never behind the icon
+    paddingRight: 30,
   },
   iconContainer: {
     top: 15,

@@ -5,7 +5,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome'
 
 import FacilitiesNavigator from './stack/FacilitiesNavigator';
-import ManagementNavigator from './stack/ManagementNavigator';
 import CameraNavigator from './stack/CameraNavigator';
 import ReportNavigator from './stack/ReportNavigator';
 import AccountNavigator from './stack/AccountNavigator';
@@ -34,16 +33,6 @@ function BottomTabNavigator() {
                         tabBarLabel: 'Report',
                         tabBarIcon: ({ color, size }) => (
                             <FontAwesomeIcon name="clipboard" color={color} size={size} />
-                        ),
-                    }}
-                />
-                <Tab.Screen
-                    name="Management"
-                    component={ManagementNavigator}
-                    options={{
-                        tabBarLabel: 'Management',
-                        tabBarIcon: ({ color, size }) => (
-                            <FontAwesomeIcon name="list-alt" color={color} size={size} />
                         ),
                     }}
                 />

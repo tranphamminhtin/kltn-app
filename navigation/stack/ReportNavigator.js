@@ -6,6 +6,7 @@ import Request from '../../screens/LoanFacilities/Request';
 import Allocate from '../../screens/LoanFacilities/Allocate';
 import Revoke from '../../screens/LoanFacilities/Revoke';
 import ListLoanFa from '../../screens/LoanFacilities/ListLoanFa';
+import All from '../../screens/LoanFacilities/All';
 import ByRoom from '../../screens/LoanFacilities/ByRoom';
 import ByManager from '../../screens/LoanFacilities/ByManager';
 
@@ -24,15 +25,18 @@ function ReportNavigator() {
             <Stack.Screen name="Revoke"
                 component={Revoke} />
             <Stack.Screen name="All"
-                component={ListLoanFa} />
+                component={All} />
             <Stack.Screen name="ByRoom"
                 component={ByRoom}
                 options={() => ({ title: 'Filter by room' })} />
             <Stack.Screen name="ByManager"
-                component={ByManager} 
+                component={ByManager}
                 options={() => ({ title: 'Filter by manager' })} />
+            <Stack.Screen name="ListLoanFa"
+                component={ListLoanFa}
+                options={() => ({ title: 'List Loan Facilities' })} />
             <Stack.Screen name="DetailLoan"
-                component={DetailLoan} 
+                component={DetailLoan}
                 options={() => ({ title: 'Detail Loan Facilities' })} />
         </Stack.Navigator>
     );
