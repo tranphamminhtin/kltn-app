@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl, Text } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl } from 'react-native';
 
 import LoanFaListItem from '../../components/LoanFaListItem';
 import AsyncStorage from '@react-native-community/async-storage';
-import { getListLoan, searchLoanByFacilities } from './../../networking/LoanAPI';
+import { searchLoanByFacilities } from './../../networking/LoanAPI';
 
 const STATESHOW = {
   Request: 'Request',
@@ -23,16 +23,7 @@ class ListLoanFa extends Component {
     this.state = {
       right: 1,
       currentEmail: '',
-      loanfacilities: [
-        { _id: 1, name: 'Bàn 1' },
-        { _id: 2, name: 'Bàn 2' },
-        { _id: 3, name: 'Bàn 3' },
-        { _id: 4, name: 'Bàn 4' },
-        { _id: 5, name: 'Bàn 5' },
-        { _id: 6, name: 'Bàn 6' },
-        { _id: 7, name: 'Bàn 7' },
-        { _id: 8, name: 'Bàn 8' }
-      ],
+      loanfacilities: [],
       idFacilities: null,
       refreshing: false,
       stateShow: ''

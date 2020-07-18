@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Text, Image, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, Image, ScrollView, StyleSheet } from 'react-native';
 import moment from 'moment';
 import { searchFacilities } from './../../networking/FacilitiesAPI';
 import { searchType } from './../../networking/TypeAPI';

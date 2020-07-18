@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 
 import OptionButton from '../components/OptionButton';
@@ -18,10 +18,6 @@ export default function Camera({ navigation }) {
 
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
-    // console.log(data);
-    // navigation.navigate('DetailLoan', {
-    //   id: data,
-    // });
     searchLoan(data)
       .then(res => {
         navigation.navigate('DetailLoan', {

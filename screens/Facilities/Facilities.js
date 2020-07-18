@@ -7,13 +7,7 @@ export default class Facilities extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            types: [
-                { _id: 1, name: 'type 1' },
-                { _id: 2, name: 'type 2' },
-                { _id: 3, name: 'type 3' },
-                { _id: 4, name: 'type 4' },
-                { _id: 5, name: 'type 5' },
-            ],
+            types: [],
             refreshing: false
         };
     }

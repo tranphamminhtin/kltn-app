@@ -26,20 +26,8 @@ export default class FacilitiesListItem extends Component {
             datePicker: new Date(),
             isDatePickerVisible: false,
             type: null,
-            managers: [
-                { _id: 1, email: 'asd1@gmail', name: 'name 1' },
-                { _id: 2, email: 'asd2@gmail', name: 'name 2' },
-                { _id: 3, email: 'asd3@gmail', name: 'name 3' },
-                { _id: 4, email: 'asd4@gmail', name: 'name 4' },
-                { _id: 5, email: 'asd5@gmail', name: 'name 5' }
-            ],
-            rooms: [
-                { _id: 1, name: 'room 1' },
-                { _id: 2, name: 'room 2' },
-                { _id: 3, name: 'room 3' },
-                { _id: 4, name: 'room 4' },
-                { _id: 5, name: 'room 5' }
-            ],
+            managers: [],
+            rooms: [],
             manager: null,
             room: null,
             facilities: null
@@ -49,14 +37,7 @@ export default class FacilitiesListItem extends Component {
     componentDidMount() {
         this.setState({ facilities: this.props.facilities });
         this.getDataFromStorage().then(r => {
-            const { right } = this.state;
-            if (right === 0) {
-                this.getManagersFromServer();
-            } else {
-                this.searchManagerFromServer();
-            }
             this.getTypeFromServer();
-            this.getRoomsFromServer();
         });
 
     }
@@ -112,7 +93,6 @@ export default class FacilitiesListItem extends Component {
 
     searchManagerFromServer = () => {
         const { currentEmail } = this.state;
-        console.log(currentEmail);
         searchUser(currentEmail)
             .then(manager => {
                 this.setState({ managers: [], currentUnit: manager?.unit });
@@ -130,6 +110,17 @@ export default class FacilitiesListItem extends Component {
             return srcImage;
         }
         return null;
+    }
+
+    onShowModalRequest = () => {
+        const { right } = this.state;
+        if (right === 0) {
+            this.getManagersFromServer();
+        } else {
+            this.searchManagerFromServer();
+        }
+        this.getRoomsFromServer();
+        this.setState({ isModalVisible: true });
     }
 
     onSaveRequest = () => {
@@ -183,7 +174,7 @@ export default class FacilitiesListItem extends Component {
                             <Text style={styles.title}>{facilities?.name}</Text>
                             <Text>Loại: {type?.name}</Text>
                             <Text style={{ color: '#a1a1a1', marginTop: 7 }}>Số lượng: {facilities?.quantity}</Text>
-                            <TouchableOpacity activeOpacity={0.5} onPress={() => this.setState({ isModalVisible: true })}>
+                            <TouchableOpacity activeOpacity={0.5} onPress={this.onShowModalRequest}>
                                 <RectButton style={styles.buttonRequest}>
                                     <FontAwesomeIcon name='inbox' size={25} />
                                     <Text style={{ fontSize: 18, paddingTop: 3 }}> Cấp phát</Text>
