@@ -5,7 +5,7 @@ import Modal from 'react-native-modal';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { RectButton } from 'react-native-gesture-handler';
 import domain from '../networking/domain';
-
+import AsyncStorage from '@react-native-community/async-storage';
 import moment from 'moment';
 
 import { updateLoan } from './../networking/LoanAPI';
@@ -13,6 +13,7 @@ import { searchFacilities } from './../networking/FacilitiesAPI';
 import { searchRoom } from './../networking/RoomAPI';
 import { searchUser } from './../networking/UserAPI';
 import { searchUnit } from './../networking/UnitAPI';
+import { getVoteByIdLoanFa } from './../networking/VoteAPI';
 
 const STATESHOW = {
     Request: 'Request',
@@ -24,7 +25,7 @@ export default class LoanFaListItem extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            right: 0,
+            right: 1,
             loan: null,
             facilities: null,
             room: null,
@@ -33,18 +34,33 @@ export default class LoanFaListItem extends Component {
             isModalVisible: false,
             isDatePickerVisible: false,
             toDate: null,
-            datePicker: new Date()
+            datePicker: new Date(),
+            isShow: true,
+            percentVote: 100
         };
     }
 
     componentDidMount() {
         const { loan } = this.props;
-        this.setState({ loan }, () => {
-            this.getFacilitiesFromServer();
-            this.getRoomFromServer();
-            this.getManagerFromServer();
-            this.getUnitFromServer();
+        this.getDataFromStorage().then(r => {
+            this.setState({ loan }, () => {
+                this.getFacilitiesFromServer();
+                this.getRoomFromServer();
+                this.getManagerFromServer();
+                this.getUnitFromServer();
+                this.getVoteFromServer();
+            });
         });
+    }
+
+    getDataFromStorage = async () => {
+        await AsyncStorage.getItem('right', (err, result) => {
+            if (err) console.log(err);
+            if (result) {
+                this.setState({ right: JSON.parse(result) });
+            }
+        });
+        return '';
     }
 
     getFacilitiesFromServer = () => {
@@ -95,6 +111,13 @@ export default class LoanFaListItem extends Component {
         }
     }
 
+    getVoteFromServer = () => {
+        const id = this.state.loan?._id;
+        getVoteByIdLoanFa(id)
+            .then(vote => this.setState({ percentVote: vote?.percent }))
+            .catch(err => console.log(err));
+    }
+
     getImage = () => {
         const { facilities } = this.state;
         const srcImage = facilities?.image.replace("http://localhost:3000", domain);
@@ -131,11 +154,12 @@ export default class LoanFaListItem extends Component {
 
     updateLoanFacilities = () => {
         const { loan } = this.state;
+        console.log(loan);
         const id = loan._id;
         updateLoan(id, loan)
             .then(flag => {
                 alert('Thành công');
-
+                this.setState({ isShow: false });
             })
             .catch(err => {
                 console.log(err);
@@ -145,53 +169,61 @@ export default class LoanFaListItem extends Component {
 
     render() {
         const { onPress, stateShow } = this.props;
-        const { facilities, room, manager, unit, isModalVisible, isDatePickerVisible, toDate, datePicker } = this.state;
+        const { facilities, room, manager, unit, isModalVisible, isDatePickerVisible, toDate, datePicker, isShow, right, percentVote }
+            = this.state;
         return (
             <View>
-                <TouchableOpacity activeOpacity={0.5} onPress={onPress}>
-                    <View style={styles.container}>
-                        <Image style={styles.FacilitiesImage} source={{ uri: this.getImage() }} />
-                        <View style={styles.description}>
-                            <Text style={styles.title}>{facilities?.name}</Text>
-                            <View style={{ flexDirection: 'row' }}>
-                                <View>
-                                    <Text style={{ fontSize: 15 }}>{unit?.name}</Text>
-                                    <Text style={styles.manager}>{manager?.name}</Text>
-                                </View>
-                                <View style={{ marginLeft: 'auto' }}>
-                                    <Text style={{ fontSize: 15 }} >{room?.name}</Text>
-                                    {stateShow == STATESHOW.Request &&
-                                        <FontAwesomeIcon
-                                            name="check-square-o"
-                                            size={35}
-                                            color={'green'}
-                                            style={styles.button}
-                                            onPress={this.onAllocate}
-                                        />
-                                    }
-                                    {stateShow == STATESHOW.Allocate &&
-                                        <FontAwesomeIcon
-                                            name="external-link"
-                                            size={35}
-                                            color={'red'}
-                                            style={styles.button}
-                                            onPress={this.onRevoke}
-                                        />
-                                    }
-                                    {stateShow == STATESHOW.Revoke &&
-                                        <FontAwesomeIcon
-                                            name="save"
-                                            size={35}
-                                            color={'blue'}
-                                            style={styles.button}
-                                            onPress={() => this.setState({ isModalVisible: true })}
-                                        />
-                                    }
+                {isShow &&
+                    <TouchableOpacity activeOpacity={0.5} onPress={onPress}>
+                        <View style={styles.container}>
+                            <Image style={styles.FacilitiesImage} source={{ uri: this.getImage() }} />
+                            <View style={styles.description}>
+                                <Text style={styles.title}>{facilities?.name}</Text>
+                                <View style={{ flexDirection: 'row' }}>
+                                    <View>
+                                        <Text style={{ fontSize: 15 }}>{unit?.name}</Text>
+                                        <Text style={styles.manager}>{manager?.name}</Text>
+                                        <Text style={{ fontSize: 15 }}>Tình trạng: {percentVote||100}%</Text>
+                                    </View>
+                                    <View style={{ marginLeft: 'auto' }}>
+                                        <Text style={{ fontSize: 15 }} >{room?.name}</Text>
+                                        {right === 0 &&
+                                            <>
+                                                {stateShow == STATESHOW.Request &&
+                                                    <FontAwesomeIcon
+                                                        name="check-square-o"
+                                                        size={35}
+                                                        color={'green'}
+                                                        style={styles.button}
+                                                        onPress={this.onAllocate}
+                                                    />
+                                                }
+                                                {stateShow == STATESHOW.Allocate &&
+                                                    <FontAwesomeIcon
+                                                        name="external-link"
+                                                        size={35}
+                                                        color={'red'}
+                                                        style={styles.button}
+                                                        onPress={this.onRevoke}
+                                                    />
+                                                }
+                                                {stateShow == STATESHOW.Revoke &&
+                                                    <FontAwesomeIcon
+                                                        name="save"
+                                                        size={35}
+                                                        color={'blue'}
+                                                        style={styles.button}
+                                                        onPress={() => this.setState({ isModalVisible: true })}
+                                                    />
+                                                }
+                                            </>
+                                        }
+                                    </View>
                                 </View>
                             </View>
                         </View>
-                    </View>
-                </TouchableOpacity>
+                    </TouchableOpacity>
+                }
                 <Modal isVisible={isModalVisible}>
                     <View style={modalStyles.container}>
                         <FontAwesomeIcon name='remove' size={35} color='red'
@@ -224,7 +256,7 @@ export default class LoanFaListItem extends Component {
                                 onPress={() => { this.setState({ isDatePickerVisible: false, toDate: this.state.datePicker }) }}
                                 style={pickerDateStyles.confirm}>
                                 Comfirm
-                            </Text>
+                        </Text>
                             <DateTimePicker
                                 testID="dateTimePicker"
                                 value={datePicker}

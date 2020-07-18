@@ -1,5 +1,4 @@
 import React from 'react';
-
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome'
@@ -14,8 +13,7 @@ const Tab = createBottomTabNavigator();
 function BottomTabNavigator() {
     return (
         <NavigationContainer>
-            <Tab.Navigator
-            >
+            <Tab.Navigator>
                 <Tab.Screen
                     name="ListFacilities"
                     component={FacilitiesNavigator}

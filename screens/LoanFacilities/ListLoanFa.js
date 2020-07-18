@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, Text } from 'react-native';
 
 import LoanFaListItem from '../../components/LoanFaListItem';
-
+import AsyncStorage from '@react-native-community/async-storage';
 import { getListLoan, searchLoanByFacilities } from './../../networking/LoanAPI';
 
 const STATESHOW = {
@@ -11,10 +11,18 @@ const STATESHOW = {
   Revoke: 'Revoke'
 };
 
+const FILTER = {
+  All: 0,
+  ByRoom: 1,
+  ByManager: 2
+}
+
 class ListLoanFa extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      right: 1,
+      currentEmail: '',
       loanfacilities: [
         { _id: 1, name: 'Bàn 1' },
         { _id: 2, name: 'Bàn 2' },
@@ -38,7 +46,23 @@ class ListLoanFa extends Component {
     });
   }
 
+  getDataFromStorage = () => {
+    AsyncStorage.getItem('right', (err, result) => {
+      if (err) console.log(err);
+      if (result) {
+        this.setState({ right: JSON.parse(result) });
+      }
+    });
+    AsyncStorage.getItem('email', (err, result) => {
+      if (err) console.log(err);
+      if (result) {
+        this.setState({ currentEmail: result });
+      }
+    });
+  }
+
   refreshLoanFacilitiesFromServer = () => {
+    const { filter, contentFilter } = this.props.route.params;
     const { stateShow, idFacilities } = this.state;
     this.setState({ refreshing: true });
     searchLoanByFacilities(idFacilities)
@@ -53,6 +77,15 @@ class ListLoanFa extends Component {
         if (stateShow === STATESHOW.Revoke) {
           loanFas = loanfacilities.filter(f => f.state === 1 && f.request === false);
         }
+        if (contentFilter) {
+          if (filter === FILTER.ByRoom) {
+            loanFas = loanfacilities.filter(f => f.room === contentFilter);
+          }
+          if (filter === FILTER.ByManager) {
+            loanFas = loanfacilities.filter(f => f.manager === contentFilter);
+          }
+        }
+
         this.setState({
           loanfacilities: loanFas,
           refreshing: false

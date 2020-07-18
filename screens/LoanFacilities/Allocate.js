@@ -1,14 +1,24 @@
 import React, { Component } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-
+import AsyncStorage from '@react-native-community/async-storage';
 import OptionButton from '../../components/OptionButton';
 
 class Allocate extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            right: 1
         };
+    }
+
+    componentDidMount() {
+        AsyncStorage.getItem('right', (err, result) => {
+            if (err) console.log(err);
+            if (result) {
+                this.setState({ right: JSON.parse(result) });
+            }
+        });
     }
 
     onPress = (screenName) => () => {
@@ -19,6 +29,7 @@ class Allocate extends Component {
     }
 
     render() {
+        const { right } = this.state;
         return (
             <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
                 <OptionButton
@@ -33,12 +44,16 @@ class Allocate extends Component {
                     onPress={this.onPress('ByRoom')}
                 />
                 <View style={{ backgroundColor: '#e9ebee', height: 3 }} />
-                <OptionButton
-                    icon="group"
-                    label="Tìm kiếm theo người quản lý"
-                    onPress={this.onPress('ByManager')}
-                />
-                <View style={{ backgroundColor: '#e9ebee', height: 3 }} />
+                {right === 0 &&
+                    <>
+                        <OptionButton
+                            icon="group"
+                            label="Tìm kiếm theo người quản lý"
+                            onPress={this.onPress('ByManager')}
+                        />
+                        <View style={{ backgroundColor: '#e9ebee', height: 3 }} />
+                    </>
+                }
             </ScrollView>
         );
     }

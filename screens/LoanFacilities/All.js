@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl } from 'react-native';
 
 import FacilitiesListItem from '../../components/FacilitiesListItemDistinct';
-
-import { getFacilitiesByRoom } from '../../networking/FacilitiesAPI';
+import AsyncStorage from '@react-native-community/async-storage';
+import { getFacilitiesByManager } from '../../networking/FacilitiesAPI';
 
 const STATESHOW = {
     Request: 'Request',
@@ -11,10 +11,14 @@ const STATESHOW = {
     Revoke: 'Revoke'
 };
 
+const filter = 0;
+
 export default class All extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            right: 1,
+            currentEmail: '',
             facilities: [],
             refreshing: false
         };
@@ -24,10 +28,25 @@ export default class All extends Component {
         this.refreshFacilitiesFromServer();
     }
 
+    getDataFromStorage = () => {
+        AsyncStorage.getItem('right', (err, result) => {
+            if (err) console.log(err);
+            if (result) {
+                this.setState({ right: JSON.parse(result) });
+            }
+        });
+        AsyncStorage.getItem('email', (err, result) => {
+            if (err) console.log(err);
+            if (result) {
+                this.setState({ currentEmail: result });
+            }
+        });
+    }
+
     refreshFacilitiesFromServer = () => {
         const { stateShow } = this.props.route.params;
         this.setState({ refreshing: true });
-        getFacilitiesByRoom('null', stateShow)
+        getFacilitiesByManager('null', stateShow)
             .then(facilities => {
                 this.setState({
                     facilities: facilities,
@@ -59,7 +78,9 @@ export default class All extends Component {
                             facilities={item}
                             onPress={() => navigation.navigate('ListLoanFa', {
                                 _id: item._id,
-                                stateShow: stateShow
+                                stateShow: stateShow,
+                                filter: filter,
+                                contentFilter: null
                             })} />
                     </View >
                 }

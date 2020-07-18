@@ -3,7 +3,7 @@ import { View, FlatList, StyleSheet, Text, RefreshControl } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
 import FacilitiesListItem from '../../components/FacilitiesListItemDistinct';
-
+import AsyncStorage from '@react-native-community/async-storage';
 import { getFacilitiesByRoom } from './../../networking/FacilitiesAPI';
 import { getListRoom } from './../../networking/RoomAPI';
 
@@ -13,10 +13,14 @@ const STATESHOW = {
   Revoke: 'Revoke'
 };
 
+const filter = 1;
+
 class ByRoom extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      right: 1,
+      currentEmail: '',
       rooms: [
         { _id: 1, name: 'room 1' },
         { _id: 2, name: 'room 2' },
@@ -36,6 +40,21 @@ class ByRoom extends Component {
     this.setState({ stateShow: stateShow }, () => {
       this.refreshFacilitiesFromServer();
       this.refreshRoomsFromServer();
+    });
+  }
+
+  getDataFromStorage = () => {
+    AsyncStorage.getItem('right', (err, result) => {
+      if (err) console.log(err);
+      if (result) {
+        this.setState({ right: JSON.parse(result) });
+      }
+    });
+    AsyncStorage.getItem('email', (err, result) => {
+      if (err) console.log(err);
+      if (result) {
+        this.setState({ currentEmail: result });
+      }
     });
   }
 
@@ -117,7 +136,9 @@ class ByRoom extends Component {
                 facilities={item}
                 onPress={() => navigation.navigate('ListLoanFa', {
                   _id: item._id,
-                  stateShow: stateShow
+                  stateShow: stateShow,
+                  filter: filter,
+                  contentFilter: room
                 })} />
             </View >
           }

@@ -25,7 +25,7 @@ export default function Camera({ navigation }) {
     searchLoan(data)
       .then(res => {
         navigation.navigate('DetailLoan', {
-          id: data,
+          _id: data,
         });
         setScanned(false);
       })
@@ -65,7 +65,6 @@ export default function Camera({ navigation }) {
           onPress={() => setScanned(false)}
         />
       }
-      {/* {scanned && <Button title={'Tap to Scan Again'} onPress={() => setScanned(false)} />} */}
     </View>
   );
 }

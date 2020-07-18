@@ -3,41 +3,33 @@ import { View, Text, ScrollView, StyleSheet, Image, TouchableOpacity } from 'rea
 import RNPickerSelect from 'react-native-picker-select';
 import { Input } from 'galio-framework';
 import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { RectButton } from 'react-native-gesture-handler';
 import OptionButton from '../../components/OptionButton';
 import Modal from 'react-native-modal';
 import moment from 'moment';
 import domain from '../../networking/domain';
-
+import AsyncStorage from '@react-native-community/async-storage';
 import { getListUser } from './../../networking/UserAPI';
 import { getListRoom } from './../../networking/RoomAPI';
 import { searchLoan, updateLoan } from './../../networking/LoanAPI';
 import { searchFacilities } from './../../networking/FacilitiesAPI';
+import { getVoteByIdLoanFa, updateVote, createVote } from './../../networking/VoteAPI';
 
+const LABELSTATE = {
+  Approve: 'Duyệt',
+  Allocate: 'Cấp phát',
+  Revoke: 'Thu hồi'
+}
 export default class DetailLoan extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      managers: [
-        { _id: 1, email: 'asd1@gmail', name: 'name 1' },
-        { _id: 2, email: 'asd2@gmail', name: 'name 2' },
-        { _id: 3, email: 'asd3@gmail', name: 'name 3' },
-        { _id: 4, email: 'asd4@gmail', name: 'name 4' },
-        { _id: 5, email: 'asd5@gmail', name: 'name 5' }
-      ],
-      rooms: [
-        { _id: 1, name: 'room 1' },
-        { _id: 2, name: 'room 2' },
-        { _id: 3, name: 'room 3' },
-        { _id: 4, name: 'room 4' },
-        { _id: 5, name: 'room 5' }
-      ],
-      units: [
-        { _id: 1, name: 'unit 1' },
-        { _id: 2, name: 'unit 2' },
-        { _id: 3, name: 'unit 3' },
-        { _id: 4, name: 'unit 4' },
-        { _id: 5, name: 'unit 5' }
-      ],
+      right: 1,
+      currentEmail: '',
+      managers: [],
+      rooms: [],
+      units: [],
       percent: [
         { label: '10%', value: 10 },
         { label: '20%', value: 20 },
@@ -58,17 +50,36 @@ export default class DetailLoan extends Component {
       isDatePickerVisible: false,
       toDate: null,
       datePicker: new Date(),
-      labelStateFacilities: ''
+      labelStateFacilities: '',
+      vote: {}
     };
   }
 
   componentDidMount() {
     const { _id } = this.props.route.params;
-    this.setState({ _id: _id }, () => {
-      this.onGetLoanFromServer();
-      this.onGetListManagersFromServer();
-      this.onGetListRoomsFromServer();
+    this.getDataFromStorage().then(r => {
+      this.setState({ _id: _id }, () => {
+        this.onGetLoanFromServer();
+        this.onGetListManagersFromServer();
+        this.onGetListRoomsFromServer();
+      });
     });
+  }
+
+  getDataFromStorage = async () => {
+    await AsyncStorage.getItem('right', (err, result) => {
+      if (err) console.log(err);
+      if (result) {
+        this.setState({ right: JSON.parse(result) });
+      }
+    });
+    await AsyncStorage.getItem('email', (err, result) => {
+      if (err) console.log(err);
+      if (result) {
+        this.setState({ currentEmail: result });
+      }
+    });
+    return '';
   }
 
   onGetLoanFromServer = () => {
@@ -77,9 +88,9 @@ export default class DetailLoan extends Component {
       .then(loan => {
         let label = '';
         if (loan.request === true) {
-          label = 'Duyệt cấp phát';
+          label = LABELSTATE.Approve;
         } else {
-          label = loan.state === 0 ? 'Thu hồi' : 'Cấp phát';
+          label = loan.state === 0 ? LABELSTATE.Revoke : LABELSTATE.Allocate;
         }
         this.setState({ loan: loan, labelStateFacilities: label });
         this.onGetFacilitiesFromServer(loan.facilities);
@@ -155,7 +166,14 @@ export default class DetailLoan extends Component {
     const { _id, loan } = this.state;
     updateLoan(_id, loan)
       .then(success => {
-        alert('Sửa thành công');
+        alert('Thành công');
+        let label = '';
+        if (loan.request === true) {
+          label = LABELSTATE.Approve;
+        } else {
+          label = loan.state === 0 ? LABELSTATE.Revoke : LABELSTATE.Allocate;
+        }
+        this.setState({ labelStateFacilities: label });
       })
       .catch(err => {
         console.log(err);
@@ -165,21 +183,61 @@ export default class DetailLoan extends Component {
 
   onChangeState = () => {
     //change state of loan with 0 is allocate and 1 is revoke
-    let { loan } = this.setState
+    let { loan, labelStateFacilities } = this.state;
     if (loan.request === true) {
       loan.request = !loan.request;
       loan.state = 0;
     } else {
       loan.state = loan.state === 0 ? 1 : 0;
     }
-    this.setState({ loan: loan }, this.onUpdate);
+    if (labelStateFacilities === LABELSTATE.Allocate) {
+      this.setState({ isModalRequestVisible: true, loan: loan });
+    } else {
+      this.setState({ loan: loan }, this.onUpdate);
+    }
+  }
+
+  onModalAllocateSubmit = () => {
+    let { loan, toDate } = this.state;
+    loan.to = toDate;
+    loan.from = new Date();
+    this.setState({ loan: loan, isModalRequestVisible: false }, this.onUpdate);
+  }
+
+  setVote = (value, key) => {
+    let { vote } = this.state;
+    vote[key] = value;
+    this.setState({ vote: vote });
   }
 
   onVote = () => {
+    let { vote, _id, currentEmail } = this.state;
+    if (!vote?.percent) {
+      vote.percent = 100;
+    }
+    vote.email = currentEmail;
+    if (vote?._id) {
+      updateVote(vote._id, vote).then(r => alert('Thành công')).catch(err => alert('Thất bại'));
+    } else {
+      vote.loanFacilities = _id;
+      createVote(vote).then(r => alert('Thành công')).catch(err => alert('Thất bại'));
+    }
     this.setState({ isModalVisible: false });
   }
 
   onShowModal = () => {
+    const { _id } = this.state;
+    getVoteByIdLoanFa(_id)
+      .then(vote => {
+        if (vote?._id)
+          this.setState({ vote: vote, isModalVisible: true });
+        else
+          this.setState({ vote: {}, isModalVisible: true });
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({ vote: {}, isModalVisible: true });
+      });
     this.setState({
       isModalVisible: true,
     });
@@ -196,7 +254,10 @@ export default class DetailLoan extends Component {
       isModalRequestVisible,
       isDatePickerVisible,
       toDate,
-      labelStateFacilities } = this.state;
+      datePicker,
+      labelStateFacilities,
+      right,
+      vote } = this.state;
     const image = this.getImage();
     return (
       <View style={{ flex: 1 }}>
@@ -214,7 +275,8 @@ export default class DetailLoan extends Component {
             <Text style={{ fontSize: 17, marginBottom: 10 }}>Tình trạng thiết bị</Text>
             <RNPickerSelect
               placeholder={{ label: 'Tình trạng' }}
-              onValueChange={(value) => console.log(value)}
+              onValueChange={(value) => this.setVote(value, 'percent')}
+              value={vote?.percent}
               items={percent}
               style={pickerSelectStyles}
               Icon={() => <FontAwesomeIcon name='chevron-down' size={30} color={'#a1a1a1'} />}
@@ -225,8 +287,8 @@ export default class DetailLoan extends Component {
               color='black'
               type='default'
               style={{ alignSelf: 'center', marginVertical: 10 }}
-            // value={inputModal}
-            // onChange={event => this.setState({ inputModal: event.nativeEvent.text })}
+              value={vote?.note}
+              onChange={event => this.setVote(event.nativeEvent.text, 'note')}
             />
             <TouchableOpacity
               onPress={this.onVote}
@@ -245,7 +307,7 @@ export default class DetailLoan extends Component {
             </TouchableOpacity>
           </View>
         </Modal>
-        {/* this is modal for request or allocate */}
+        {/* this is modal for allocate */}
         <Modal isVisible={isModalRequestVisible}>
           <View style={modalStyles.container}>
             <FontAwesomeIcon name='remove' size={35} color='red'
@@ -265,7 +327,7 @@ export default class DetailLoan extends Component {
               </View>
             </RectButton>
             <View style={{ backgroundColor: 'gray', height: 1, marginVertical: 10 }} />
-            <TouchableOpacity onPress={this.onChangeState}
+            <TouchableOpacity onPress={this.onModalAllocateSubmit}
               style={modalStyles.buttonSave}
             >
               <FontAwesomeIcon name='save' size={35} />
@@ -332,22 +394,26 @@ export default class DetailLoan extends Component {
           />
           <Text style={styles.description}>Note</Text>
           <Input placeholder="Note" style={styles.inputNote} value={loan?.note} onChange={this.onChangeNote} />
-          <OptionButton
-            icon="wrench"
-            label="Update"
-            backgroundColor='#0069d9'
-            colorLabel='white'
-            style={styles.buttonUpdate}
-            onPress={this.onUpdate}
-          />
-          <OptionButton
-            icon="wrench"
-            label={labelStateFacilities}
-            backgroundColor='#0069d9'
-            colorLabel='white'
-            style={styles.buttonUpdate}
-            onPress={this.onChangeState}
-          />
+          {right === 0 &&
+            <>
+              <OptionButton
+                icon="wrench"
+                label="Update"
+                backgroundColor='#0069d9'
+                colorLabel='white'
+                style={styles.buttonUpdate}
+                onPress={this.onUpdate}
+              />
+              <OptionButton
+                icon="wrench"
+                label={labelStateFacilities}
+                backgroundColor='#0069d9'
+                colorLabel='white'
+                style={styles.buttonUpdate}
+                onPress={this.onChangeState}
+              />
+            </>
+          }
         </ScrollView>
       </View>
     );
@@ -462,5 +528,21 @@ const modalStyles = StyleSheet.create({
     borderRadius: 15,
     marginBottom: 10,
     backgroundColor: 'mediumseagreen',
+  }
+});
+const pickerDateStyles = StyleSheet.create({
+  container: {
+    backgroundColor: 'white',
+    bottom: 0,
+    borderRadius: 10,
+    marginTop: 4
+  },
+  confirm: {
+    alignSelf: 'flex-end',
+    fontSize: 15,
+    marginRight: 10,
+    color: 'blue',
+    marginTop: 10,
+    fontSize: 15
   }
 });

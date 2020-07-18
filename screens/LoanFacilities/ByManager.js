@@ -3,7 +3,6 @@ import { View, FlatList, StyleSheet, Text, RefreshControl } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
 import FacilitiesListItem from '../../components/FacilitiesListItemDistinct';
-
 import { getListUser } from './../../networking/UserAPI';
 import { getFacilitiesByManager } from './../../networking/FacilitiesAPI';
 
@@ -12,6 +11,8 @@ const STATESHOW = {
   Allocate: 'Allocate',
   Revoke: 'Revoke'
 };
+
+const filter = 2;
 
 class ByManager extends Component {
   constructor(props) {
@@ -109,7 +110,9 @@ class ByManager extends Component {
                 facilities={item}
                 onPress={() => navigation.navigate('ListLoanFa', {
                   _id: item._id,
-                  stateShow: stateShow
+                  stateShow: stateShow,
+                  filter: filter,
+                  contentFilter: manager
                 })} />
             </View >
           }

@@ -7,17 +7,20 @@ import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
 import Modal from 'react-native-modal';
 import moment from 'moment';
 import domain from '../networking/domain';
+import AsyncStorage from '@react-native-community/async-storage';
 
 import { createLoan } from './../networking/LoanAPI';
 import { searchType } from './../networking/TypeAPI';
-import { getListUser } from './../networking/UserAPI';
+import { getListUser, searchUser } from './../networking/UserAPI';
 import { getListRoom } from './../networking/RoomAPI';
 
 export default class FacilitiesListItem extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            right: 0,
+            right: 1,
+            currentEmail: '',
+            currentUnit: '',
             isModalVisible: false,
             toDate: null,
             datePicker: new Date(),
@@ -38,14 +41,40 @@ export default class FacilitiesListItem extends Component {
                 { _id: 5, name: 'room 5' }
             ],
             manager: null,
-            room: null
+            room: null,
+            facilities: null
         };
     }
 
     componentDidMount() {
-        this.getTypeFromServer();
-        this.getManagersFromServer();
-        this.getRoomsFromServer();
+        this.setState({ facilities: this.props.facilities });
+        this.getDataFromStorage().then(r => {
+            const { right } = this.state;
+            if (right === 0) {
+                this.getManagersFromServer();
+            } else {
+                this.searchManagerFromServer();
+            }
+            this.getTypeFromServer();
+            this.getRoomsFromServer();
+        });
+
+    }
+
+    getDataFromStorage = async () => {
+        await AsyncStorage.getItem('right', (err, result) => {
+            if (err) console.log(err);
+            if (result) {
+                this.setState({ right: JSON.parse(result) });
+            }
+        });
+        await AsyncStorage.getItem('email', (err, result) => {
+            if (err) console.log(err);
+            if (result) {
+                this.setState({ currentEmail: result });
+            }
+        });
+        return '';
     }
 
     getTypeFromServer = () => {
@@ -81,6 +110,19 @@ export default class FacilitiesListItem extends Component {
             });
     }
 
+    searchManagerFromServer = () => {
+        const { currentEmail } = this.state;
+        console.log(currentEmail);
+        searchUser(currentEmail)
+            .then(manager => {
+                this.setState({ managers: [], currentUnit: manager?.unit });
+            })
+            .catch(err => {
+                console.log(err);
+                this.setState({ managers: [] });
+            });
+    }
+
     getImage = () => {
         const { facilities } = this.props;
         if (facilities?.image) {
@@ -92,20 +134,33 @@ export default class FacilitiesListItem extends Component {
 
     onSaveRequest = () => {
         this.setState({ isModalVisible: false });
-        const { manager, managers } = this.state;
-        const unit = managers.find(m => m.email === manager)?.unit;
+        const { manager, managers, right, currentEmail, currentUnit } = this.state;
+        let email = '';
+        let unit = '';
+        if (right === 0) {
+            email = manager;
+            unit = managers.find(m => m.email === manager)?.unit;
+        } else {
+            email = currentEmail;
+            unit = currentUnit;
+        }
+        let { facilities } = this.state;
         let loan = {
             facilities: this.props.facilities._id,
             room: this.state.room,
             unit: unit,
-            manager: manager,
+            manager: email,
             from: Date.now(),
             to: this.state.toDate,
             state: 0,
             request: this.state.right === 1
         }
         createLoan(loan)
-            .then(flag => alert('Thành công'))
+            .then(flag => {
+                alert('Thành công');
+                facilities.quantity = facilities.quantity - 1;
+                this.setState({ facilities });
+            })
             .catch(err => {
                 console.log(err);
                 alert('Thất bại');
@@ -113,8 +168,9 @@ export default class FacilitiesListItem extends Component {
     }
 
     render() {
-        const { facilities, onPress } = this.props;
-        const { isModalVisible, type, rooms, managers, toDate, datePicker, isDatePickerVisible, manager, room } = this.state;
+        const { onPress } = this.props;
+        const { isModalVisible, type, rooms, managers, toDate, datePicker, isDatePickerVisible, manager, room, facilities, right }
+            = this.state;
         const image = this.getImage();
         return (
             <View>
@@ -143,20 +199,24 @@ export default class FacilitiesListItem extends Component {
                             onPress={() => this.setState({ isModalVisible: false, isDatePickerVisible: false })}
                         />
                         <View style={{ backgroundColor: 'gray', height: 1, marginBottom: 3 }} />
-                        <Text style={{ fontSize: 17 }}>Manager</Text>
-                        <RNPickerSelect
-                            placeholder={{ label: 'Select a room' }}
-                            value={manager}
-                            onValueChange={(value) => this.setState({ manager: value })}
-                            items={managers.map(manager => {
-                                var obj = {};
-                                obj.label = manager.name;
-                                obj.value = manager.email;
-                                return obj;
-                            })}
-                            style={pickerSelectStyles}
-                            Icon={() => <FontAwesomeIcon name='chevron-down' size={30} color={'#a1a1a1'} />}
-                        />
+                        {right === 0 &&
+                            <>
+                                <Text style={{ fontSize: 17 }}>Manager</Text>
+                                <RNPickerSelect
+                                    placeholder={{ label: 'Select a room' }}
+                                    value={manager}
+                                    onValueChange={(value) => this.setState({ manager: value })}
+                                    items={managers.map(manager => {
+                                        var obj = {};
+                                        obj.label = manager.name;
+                                        obj.value = manager.email;
+                                        return obj;
+                                    })}
+                                    style={pickerSelectStyles}
+                                    Icon={() => <FontAwesomeIcon name='chevron-down' size={30} color={'#a1a1a1'} />}
+                                />
+                            </>
+                        }
                         <Text style={{ fontSize: 17 }}>Room</Text>
                         <RNPickerSelect
                             placeholder={{ label: 'Select a room' }}
