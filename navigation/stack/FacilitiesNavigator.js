@@ -11,9 +11,11 @@ function FacilitiesNavigator() {
     return (
         <Stack.Navigator>
             <Stack.Screen name="Facilities"
-                component={Facilities} />
+                component={Facilities} 
+                options={() => ({ title: 'Loại thiết bị' })} />
             <Stack.Screen name="ListFacilities"
-                component={ListFacilities} />
+                component={ListFacilities} 
+                options={() => ({ title: 'Các thiết bị' })} />
             <Stack.Screen name="DetailFacilities"
                 component={DetailFacilities}
                 options={({ route }) => ({ title: route.params.title })} />

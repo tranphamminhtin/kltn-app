@@ -11,12 +11,14 @@ function AccountNavigator() {
     return (
         <Stack.Navigator>
             <Stack.Screen name="Account"
-                component={Account} />
+                component={Account} 
+                options={() => ({ title: 'Tài khoản' })} />
             <Stack.Screen name="Information"
-                component={Information} />
+                component={Information} 
+                options={() => ({ title: 'Thông tin cá nhân' })} />
             <Stack.Screen name="ChangePassword"
                 component={ChangePassword} 
-                options={() => ({ title: 'Change Password' })} />
+                options={() => ({ title: 'Đổi mật khẩu' })} />
         </Stack.Navigator>
     );
 }

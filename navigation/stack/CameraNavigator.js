@@ -13,7 +13,7 @@ function CameraNavigator() {
                 component={Camera} />
             <Stack.Screen name="DetailLoan"
                 component={DetailLoan} 
-                options={() => ({ title: 'Detail Loan Facilities' })} />
+                options={() => ({ title: 'Chi tiết thiết bị' })} />
         </Stack.Navigator>
     );
 }

@@ -121,7 +121,7 @@ export default class LoanFaListItem extends Component {
     getImage = () => {
         const { facilities } = this.state;
         const srcImage = facilities?.image.replace("http://localhost:3000", domain);
-        return srcImage;
+        return srcImage || '';
     }
 
     onAllocate = () => {

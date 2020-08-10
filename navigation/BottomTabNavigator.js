@@ -18,7 +18,7 @@ function BottomTabNavigator() {
                     name="ListFacilities"
                     component={FacilitiesNavigator}
                     options={{
-                        tabBarLabel: 'Facilities',
+                        tabBarLabel: 'Thiết bị',
                         tabBarIcon: ({ color, size }) => (
                             <FontAwesomeIcon name="briefcase" color={color} size={size} />
                         ),
@@ -28,7 +28,7 @@ function BottomTabNavigator() {
                     name="Report"
                     component={ReportNavigator}
                     options={{
-                        tabBarLabel: 'Report',
+                        tabBarLabel: 'Báo cáo',
                         tabBarIcon: ({ color, size }) => (
                             <FontAwesomeIcon name="clipboard" color={color} size={size} />
                         ),
@@ -48,7 +48,7 @@ function BottomTabNavigator() {
                     name="Account"
                     component={AccountNavigator}
                     options={{
-                        tabBarLabel: 'Account',
+                        tabBarLabel: 'Tài khoản',
                         tabBarIcon: ({ color, size }) => (
                             <FontAwesomeIcon name="user" color={color} size={size} />
                         ),

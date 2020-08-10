@@ -141,7 +141,7 @@ export default class DetailLoan extends Component {
       const srcImage = facilities?.image.replace("http://localhost:3000", domain);
       return srcImage;
     }
-    return null;
+    return '';
   }
 
   onChangeManager = value => {
@@ -398,7 +398,7 @@ export default class DetailLoan extends Component {
             <>
               <OptionButton
                 icon="wrench"
-                label="Update"
+                label="Sửa"
                 backgroundColor='#0069d9'
                 colorLabel='white'
                 style={styles.buttonUpdate}

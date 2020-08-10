@@ -1,6 +1,7 @@
 {
   "expo": {
-    "name": "app",
+    "name": "app PhucTin",
+    "description": "D:\\4\\KLTN\\project\\app",
     "slug": "app",
     "platforms": [
       "ios",
@@ -23,6 +24,9 @@
     ],
     "ios": {
       "supportsTablet": true
+    },
+    "android": {
+      "package": "com.spkt.PhucTin"
     }
   }
 }

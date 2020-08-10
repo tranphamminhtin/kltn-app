@@ -17,27 +17,32 @@ function ReportNavigator() {
     return (
         <Stack.Navigator>
             <Stack.Screen name="Report"
-                component={Report} />
+                component={Report} 
+                options={() => ({ title: 'Báo cáo' })} />
             <Stack.Screen name="Request"
-                component={Request} />
+                component={Request} 
+                options={() => ({ title: 'Yêu cầu' })} />
             <Stack.Screen name="Allocate"
-                component={Allocate} />
+                component={Allocate} 
+                options={() => ({ title: 'Cấp phát' })} />
             <Stack.Screen name="Revoke"
-                component={Revoke} />
+                component={Revoke} 
+                options={() => ({ title: 'Thu hồi' })} />
             <Stack.Screen name="All"
-                component={All} />
+                component={All} 
+                options={() => ({ title: 'Tất cả' })} />
             <Stack.Screen name="ByRoom"
                 component={ByRoom}
-                options={() => ({ title: 'Filter by room' })} />
+                options={() => ({ title: 'Tìm kiếm theo phòng' })} />
             <Stack.Screen name="ByManager"
                 component={ByManager}
-                options={() => ({ title: 'Filter by manager' })} />
+                options={() => ({ title: 'Tìm kiếm theo quản lý' })} />
             <Stack.Screen name="ListLoanFa"
                 component={ListLoanFa}
-                options={() => ({ title: 'List Loan Facilities' })} />
+                options={() => ({ title: 'Các thiết bị' })} />
             <Stack.Screen name="DetailLoan"
                 component={DetailLoan}
-                options={() => ({ title: 'Detail Loan Facilities' })} />
+                options={() => ({ title: 'Thiết bị cấp phát' })} />
         </Stack.Navigator>
     );
 }
