@@ -141,7 +141,7 @@ export default class DetailLoan extends Component {
       const srcImage = facilities?.image.replace("http://localhost:3000", domain);
       return srcImage;
     }
-    return '';
+    return null;
   }
 
   onChangeManager = value => {

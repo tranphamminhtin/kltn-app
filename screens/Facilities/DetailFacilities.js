@@ -55,7 +55,7 @@ export default class DetailFacilities extends Component {
             const srcImage = detail?.image.replace("http://localhost:3000", domain);
             return srcImage;
         }
-        return '';
+        return null;
     }
 
     render() {
