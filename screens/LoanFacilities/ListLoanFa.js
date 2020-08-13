@@ -70,10 +70,10 @@ class ListLoanFa extends Component {
         }
         if (contentFilter) {
           if (filter === FILTER.ByRoom) {
-            loanFas = loanfacilities.filter(f => f.room === contentFilter);
+            loanFas = loanFas.filter(f => f.room === contentFilter);
           }
           if (filter === FILTER.ByManager) {
-            loanFas = loanfacilities.filter(f => f.manager === contentFilter);
+            loanFas = loanFas.filter(f => f.manager === contentFilter);
           }
         }
 

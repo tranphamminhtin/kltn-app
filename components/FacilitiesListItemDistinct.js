@@ -30,7 +30,7 @@ export default class FacilitiesListItem extends Component {
     getImage = () => {
         const { facilities } = this.props;
         const srcImage = facilities?.image.replace("http://localhost:3000", domain);
-        return srcImage || null;
+        return srcImage;
     }
 
     render() {
