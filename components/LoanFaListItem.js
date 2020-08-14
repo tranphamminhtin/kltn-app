@@ -136,6 +136,7 @@ export default class LoanFaListItem extends Component {
     onRevoke = () => {
         let { loan } = this.state;
         loan.state = 1;
+        loan.to = new Date(Date.now());     // new
         loan.request = false;
         this.setState({ loan: loan }, () => {
             this.updateLoanFacilities();
@@ -144,6 +145,7 @@ export default class LoanFaListItem extends Component {
 
     onRequest = () => {
         let { loan } = this.state;
+        loan.from = new Date(Date.now());   //new
         loan.to = this.state.toDate;
         loan.state = 0;
         loan.request = this.state.right === 1;

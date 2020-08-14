@@ -185,9 +185,13 @@ export default class DetailLoan extends Component {
     //change state of loan with 0 is allocate and 1 is revoke
     let { loan, labelStateFacilities } = this.state;
     if (loan.request === true) {
+      loan.from = new Date(Date.now());
       loan.request = !loan.request;
       loan.state = 0;
     } else {
+      if(loan.state === 0 ){
+        loan.to = new Date(Date.now());
+      }
       loan.state = loan.state === 0 ? 1 : 0;
     }
     if (labelStateFacilities === LABELSTATE.Allocate) {
